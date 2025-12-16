@@ -7,6 +7,12 @@ import uvicorn
 from collections import defaultdict
 
 app = FastAPI()
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# FAVICON FALLBACK (CỰC QUAN TRỌNG)
+@app.get("/favicon.ico")
+async def favicon():
+    return FileResponse("static/AI_Smart_Monitor.ico")
 templates = Jinja2Templates(directory="templates")
 
 logs_by_class = defaultdict(list)
