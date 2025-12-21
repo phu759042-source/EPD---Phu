@@ -15,9 +15,7 @@
       transition: opacity 0.3s ease;
     }
 
-    body.page-loaded {
-      opacity: 1;
-    }
+    body.page-loaded { opacity: 1; }
 
     .header {
       display: flex;
@@ -31,9 +29,7 @@
       animation: headerIn 0.7s ease forwards;
     }
 
-    body.page-loaded .header {
-      animation-delay: 0.1s;
-    }
+    body.page-loaded .header { animation-delay: 0.1s; }
 
     .dashboard-grid {
       display: grid;
@@ -99,24 +95,14 @@
     .bg-blue { background: #1565c0; }
     .bg-purple { background: #6a1b9a; }
 
-    .row-new {
-      animation: rowIn 0.45s ease forwards;
-    }
+    .row-new { animation: rowIn 0.45s ease forwards; }
 
     @keyframes rowIn {
-      from {
-        opacity: 0;
-        transform: scale(0.96) translateY(-8px);
-      }
-      to {
-        opacity: 1;
-        transform: scale(1) translateY(0);
-      }
+      from { opacity: 0; transform: scale(0.96) translateY(-8px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
     }
 
-    .fade-table {
-      animation: fadeIn 0.4s ease;
-    }
+    .fade-table { animation: fadeIn 0.4s ease; }
 
     @keyframes fadeIn {
       from { opacity: 0; }
@@ -130,23 +116,27 @@
       margin-top: 5px;
     }
 
-    .risk-bar-fill {
-      height: 100%;
-      border-radius: 3px;
+    .risk-bar-fill { height: 100%; border-radius: 3px; }
+
+    /* ===== HIỆU ỨNG RANKING ===== */
+    .rank-row {
+      transition: transform 0.45s ease, background 0.3s ease;
+    }
+
+    .rank-up {
+      background: rgba(76, 175, 80, 0.15);
+    }
+
+    .rank-down {
+      background: rgba(244, 67, 54, 0.12);
     }
 
     @keyframes headerIn {
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+      to { opacity: 1; transform: translateY(0); }
     }
 
     @keyframes cardIn {
-      to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-      }
+      to { opacity: 1; transform: translateY(0) scale(1); }
     }
   </style>
 </head>
@@ -209,6 +199,7 @@
 <script>
   let lastLogKeys = [];
   let hardReload = false;
+  let previousRanking = {};
 
   document.getElementById("dateSelect").value =
     new Date().toISOString().split("T")[0];
@@ -218,9 +209,12 @@
   });
 
   function getBadge(issue) {
-    if(issue.includes("Ngủ") || issue.includes("Cúi nhiều") || issue.includes("Giận dữ") || issue.includes("Sợ hãi") || issue.includes("Ghê sợ")) return `<span class="badge bg-red">${issue}</span>`;
-    if(issue.includes("Mệt") || issue.includes("Mất") || issue.includes("Hơi cúi")) return `<span class="badge bg-orange">${issue}</span>`;
-    if(issue.includes("Buồn")) return `<span class="badge bg-blue">${issue}</span>`;
+    if(issue.includes("Ngủ") || issue.includes("Cúi nhiều") || issue.includes("Giận dữ") || issue.includes("Sợ hãi") || issue.includes("Ghê sợ"))
+      return `<span class="badge bg-red">${issue}</span>`;
+    if(issue.includes("Mệt") || issue.includes("Mất") || issue.includes("Hơi cúi"))
+      return `<span class="badge bg-orange">${issue}</span>`;
+    if(issue.includes("Buồn"))
+      return `<span class="badge bg-blue">${issue}</span>`;
     return `<span class="badge bg-purple">${issue}</span>`;
   }
 
@@ -252,14 +246,19 @@
     hardReload = false;
     logTable.classList.remove("fade-table");
 
+    /* ===== RANKING + HIỆU ỨNG DI CHUYỂN ===== */
     const ranking = await (await fetch(`/api/get_risk_ranking/${mode}/${cls}/${date}`)).json();
     const max = ranking[0]?.score || 1;
+    const riskTable = document.getElementById("risk-table");
+    const oldPos = {...previousRanking};
 
-    document.getElementById("risk-table").innerHTML = ranking.map((r,i)=>{
+    riskTable.innerHTML = ranking.map((r,i)=>{
+      previousRanking[r.id] = i;
       const pct = r.score / max * 100;
       const color = i===0 ? "#d32f2f" : i<3 ? "#f57c00" : "#4caf50";
+
       return `
-        <tr>
+        <tr class="rank-row" data-id="${r.id}">
           <td>#${i+1}</td>
           <td style="color:${color};font-weight:bold">HS-${r.id}</td>
           <td>
@@ -270,6 +269,23 @@
           </td>
         </tr>`;
     }).join("");
+
+    requestAnimationFrame(() => {
+      document.querySelectorAll(".rank-row").forEach(row => {
+        const id = row.dataset.id;
+        if(oldPos[id] !== undefined && oldPos[id] !== previousRanking[id]) {
+          const delta = (oldPos[id] - previousRanking[id]) * row.offsetHeight;
+          row.style.transform = `translateY(${delta}px)`;
+          row.classList.add(oldPos[id] > previousRanking[id] ? "rank-up" : "rank-down");
+
+          requestAnimationFrame(() => {
+            row.style.transform = "translateY(0)";
+          });
+
+          setTimeout(() => row.classList.remove("rank-up","rank-down"), 600);
+        }
+      });
+    });
   }
 
   setInterval(loadData, 2000);
