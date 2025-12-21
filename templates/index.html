@@ -11,10 +11,14 @@
       background: #121212;
       color: #ddd;
       padding: 20px;
-      overflow-x: hidden;
+      opacity: 0;
+      transition: opacity 0.3s ease;
     }
 
-    /* ===== HEADER ===== */
+    body.page-loaded {
+      opacity: 1;
+    }
+
     .header {
       display: flex;
       justify-content: space-between;
@@ -22,20 +26,15 @@
       border-bottom: 2px solid #2e7d32;
       padding-bottom: 15px;
       margin-bottom: 20px;
-
       opacity: 0;
-      transform: translateY(-12px);
-      animation: headerIn 0.6s ease forwards;
+      transform: translateY(-20px);
+      animation: headerIn 0.7s ease forwards;
     }
 
-    @keyframes headerIn {
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+    body.page-loaded .header {
+      animation-delay: 0.1s;
     }
 
-    /* ===== GRID ===== */
     .dashboard-grid {
       display: grid;
       grid-template-columns: 2fr 1fr;
@@ -47,21 +46,13 @@
       padding: 20px;
       border-radius: 10px;
       box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-
       opacity: 0;
-      transform: scale(0.97) translateY(10px);
-      animation: cardIn 0.55s ease forwards;
+      transform: translateY(20px) scale(0.97);
+      animation: cardIn 0.8s cubic-bezier(.25,.8,.25,1) forwards;
     }
 
-    .card:nth-child(1) { animation-delay: 0.15s; }
-    .card:nth-child(2) { animation-delay: 0.27s; }
-
-    @keyframes cardIn {
-      to {
-        opacity: 1;
-        transform: scale(1) translateY(0);
-      }
-    }
+    body.page-loaded .card:nth-child(1) { animation-delay: 0.25s; }
+    body.page-loaded .card:nth-child(2) { animation-delay: 0.4s; }
 
     h2 {
       margin-top: 0;
@@ -90,7 +81,7 @@
     select, input[type="date"] {
       background: #333;
       color: white;
-      padding: 8px 12px;
+      padding: 10px 12px;
       font-size: 17px;
       border: 1px solid #4caf50;
       border-radius: 4px;
@@ -108,7 +99,6 @@
     .bg-blue { background: #1565c0; }
     .bg-purple { background: #6a1b9a; }
 
-    /* ===== HIỆU ỨNG LOG ===== */
     .row-new {
       animation: rowIn 0.45s ease forwards;
     }
@@ -144,6 +134,20 @@
       height: 100%;
       border-radius: 3px;
     }
+
+    @keyframes headerIn {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes cardIn {
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
   </style>
 </head>
 
@@ -170,8 +174,7 @@
     <label>Ngày:</label>
     <input type="date" id="dateSelect" onchange="hardReload=true; loadData()">
 
-    <a href="/logout"
-       style="background:#c62828;color:white;padding:8px 15px;border-radius:4px;text-decoration:none;margin-left:20px;">
+    <a href="/logout" style="background:#c62828;color:white;padding:8px 15px;border-radius:4px;text-decoration:none;margin-left:20px;">
       Đăng Xuất
     </a>
   </div>
@@ -184,11 +187,7 @@
     <table>
       <thead>
         <tr>
-          <th>Học Sinh</th>
-          <th>Vấn đề</th>
-          <th>Ngày</th>
-          <th>Thời gian</th>
-          <th>Thời lượng</th>
+          <th>Học Sinh</th><th>Vấn đề</th><th>Ngày</th><th>Thời gian</th><th>Thời lượng</th>
         </tr>
       </thead>
       <tbody id="log-table"></tbody>
@@ -199,11 +198,7 @@
     <h2>⚠️ Bảng Xếp Hạng Nguy Cơ</h2>
     <table>
       <thead>
-        <tr>
-          <th>#</th>
-          <th>Học Sinh</th>
-          <th>Điểm</th>
-        </tr>
+        <tr><th>Hạng</th><th>Học Sinh</th><th>Điểm</th></tr>
       </thead>
       <tbody id="risk-table"></tbody>
     </table>
@@ -215,12 +210,17 @@
   let lastLogKeys = [];
   let hardReload = false;
 
-  dateSelect.value = new Date().toISOString().split("T")[0];
+  document.getElementById("dateSelect").value =
+    new Date().toISOString().split("T")[0];
+
+  window.addEventListener("load", () => {
+    document.body.classList.add("page-loaded");
+  });
 
   function getBadge(issue) {
-    if (issue.includes("Ngủ")) return `<span class="badge bg-red">${issue}</span>`;
-    if (issue.includes("Mệt") || issue.includes("Mất")) return `<span class="badge bg-orange">${issue}</span>`;
-    if (issue.includes("Buồn")) return `<span class="badge bg-blue">${issue}</span>`;
+    if(issue.includes("Ngủ")) return `<span class="badge bg-red">${issue}</span>`;
+    if(issue.includes("Mệt") || issue.includes("Mất")) return `<span class="badge bg-orange">${issue}</span>`;
+    if(issue.includes("Buồn")) return `<span class="badge bg-blue">${issue}</span>`;
     return `<span class="badge bg-purple">${issue}</span>`;
   }
 
@@ -230,7 +230,7 @@
     const date = dateSelect.value;
 
     const logTable = document.getElementById("log-table");
-    if (hardReload) logTable.classList.add("fade-table");
+    if(hardReload) logTable.classList.add("fade-table");
 
     const logs = await (await fetch(`/api/get_logs/${mode}/${cls}/${date}`)).json();
     const keys = logs.map(l => `${l.zone_id}-${l.start_time}-${l.issue_type}`);
@@ -255,12 +255,12 @@
     const ranking = await (await fetch(`/api/get_risk_ranking/${mode}/${cls}/${date}`)).json();
     const max = ranking[0]?.score || 1;
 
-    riskTable.innerHTML = ranking.map((r, i) => {
+    document.getElementById("risk-table").innerHTML = ranking.map((r,i)=>{
       const pct = r.score / max * 100;
-      const color = i === 0 ? "#d32f2f" : i < 3 ? "#f57c00" : "#4caf50";
+      const color = i===0 ? "#d32f2f" : i<3 ? "#f57c00" : "#4caf50";
       return `
         <tr>
-          <td>#${i + 1}</td>
+          <td>#${i+1}</td>
           <td style="color:${color};font-weight:bold">HS-${r.id}</td>
           <td>
             ${r.score}
