@@ -52,6 +52,9 @@
 
     tr:hover { background-color: #252525; }
 
+    /* 🔒 FIX rung bảng */
+    tbody tr { height: 52px; }
+
     .risk-bar-bg {
       background: #333;
       height: 6px;
@@ -87,40 +90,24 @@
     .bg-blue { background: #1565c0; color: white; }
     .bg-purple { background: #6a1b9a; color: white; }
 
-    /* ================== HIỆU ỨNG ================== */
+    /* ================== HIỆU ỨNG (CHỈ THÊM) ================== */
 
-    .fade-slide-in {
-      animation: fadeSlideIn 0.5s ease forwards;
+    .fade-in {
+      animation: fadeIn 0.35s ease forwards;
     }
 
-    .new-item {
-      animation: newItemPop 0.45s ease forwards;
+    .pop-in {
+      animation: popIn 0.4s ease forwards;
     }
 
-    @keyframes fadeSlideIn {
-      from {
-        opacity: 0;
-        transform: translateY(20px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
     }
 
-    @keyframes newItemPop {
-      from {
-        opacity: 0;
-        transform: scale(0.95) translateY(-6px);
-      }
-      to {
-        opacity: 1;
-        transform: scale(1) translateY(0);
-      }
-    }
-
-    tbody tr {
-      transition: transform 0.25s ease, opacity 0.25s ease;
+    @keyframes popIn {
+      from { opacity: 0; transform: scale(0.96); }
+      to   { opacity: 1; transform: scale(1); }
     }
   </style>
 </head>
@@ -148,12 +135,6 @@
 
       <label>Ngày:</label>
       <input type="date" id="dateSelect" onchange="triggerHardReload()">
-
-      <a href="/logout"
-         style="background:#c62828;color:white;padding:8px 15px;text-decoration:none;
-                border-radius:4px;font-size:0.9rem;margin-left:20px;">
-        Đăng Xuất
-      </a>
     </div>
   </div>
 
@@ -190,10 +171,11 @@
 
 <script>
   let lastLogIds = [];
-  let isHardReload = false;
+  let lastRiskIds = [];
+  let hardReload = false;
 
   function triggerHardReload() {
-    isHardReload = true;
+    hardReload = true;
     loadData();
   }
 
@@ -212,22 +194,16 @@
   }
 
   async function loadData() {
-    const mode = document.getElementById("modeSelect").value;
-    const cls = document.getElementById("classSelect").value;
-    const date = document.getElementById("dateSelect").value || getTodayDate();
+    const mode = modeSelect.value;
+    const cls = classSelect.value;
+    const date = dateSelect.value || getTodayDate();
 
-    const logRes = await fetch(`/api/get_logs/${mode}/${cls}/${date}`);
-    const logs = await logRes.json();
-
-    const logTable = document.getElementById("log-table");
-    const newIds = logs.map(l => `${l.zone_id}-${l.start_time}-${l.issue_type}`);
-
-    logTable.innerHTML = logs.map((l, i) => {
+    const logs = await (await fetch(`/api/get_logs/${mode}/${cls}/${date}`)).json();
+    logTable.innerHTML = logs.map(l => {
       const id = `${l.zone_id}-${l.start_time}-${l.issue_type}`;
-      const clsAnim = isHardReload ? "fade-slide-in" :
-                      (!lastLogIds.includes(id) ? "new-item" : "");
+      const anim = hardReload || !lastLogIds.includes(id) ? "pop-in" : "";
       return `
-        <tr class="${clsAnim}" style="animation-delay:${i*0.05}s">
+        <tr class="${anim}">
           <td style="color:#4caf50;font-weight:bold">HS-${l.zone_id}</td>
           <td>${getBadge(l.issue_type)}</td>
           <td style="color:#aaa">${l.date ? l.date.split('T')[0] : date}</td>
@@ -236,32 +212,35 @@
         </tr>`;
     }).join("");
 
-    lastLogIds = newIds;
-    isHardReload = false;
+    lastLogIds = logs.map(l => `${l.zone_id}-${l.start_time}-${l.issue_type}`);
 
-    const riskRes = await fetch(`/api/get_risk_ranking/${mode}/${cls}/${date}`);
-    const ranking = await riskRes.json();
-    const riskTable = document.getElementById("risk-table");
+    const ranking = await (await fetch(`/api/get_risk_ranking/${mode}/${cls}/${date}`)).json();
     const maxScore = ranking.length ? ranking[0].score : 1;
 
-    riskTable.innerHTML = ranking.map((r,i)=>{
+    riskTable.innerHTML = ranking.map((r,i) => {
+      const anim = hardReload ? "fade-in" : "";
       const percent = (r.score / maxScore) * 100;
       let color = "#4caf50";
-      if(i===0) color="#d32f2f";
-      else if(i<3) color="#f57c00";
+      if(i === 0) color = "#d32f2f";
+      else if(i < 3) color = "#f57c00";
 
       return `
-        <tr class="fade-slide-in" style="animation-delay:${i*0.07}s">
+        <tr class="${anim}">
           <td>#${i+1}</td>
           <td style="font-weight:bold;color:${color}">HS-${r.id}</td>
           <td>
-            <span>${r.score} điểm</span>
+            <div style="display:flex; justify-content:space-between; font-size:0.8rem">
+              <span>${r.score} điểm</span>
+            </div>
             <div class="risk-bar-bg">
-              <div class="risk-bar-fill" style="width:${percent}%;background:${color}"></div>
+              <div class="risk-bar-fill" style="width:${percent}%; background:${color}"></div>
             </div>
           </td>
         </tr>`;
     }).join("");
+
+    lastRiskIds = ranking.map(r => r.id);
+    hardReload = false;
   }
 
   setInterval(loadData, 2000);
