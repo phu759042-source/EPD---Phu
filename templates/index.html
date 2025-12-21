@@ -5,74 +5,160 @@
   <title>Hệ Thống Giám Sát Đa Lớp</title>
   <link rel="icon" type="image/x-icon" href="/static/AI_Smart_Monitor.ico">
   <link rel="shortcut icon" href="/static/AI_Smart_Monitor.ico">
+
   <style>
     body { font-family: 'Segoe UI', sans-serif; background: #121212; color: #ddd; padding: 20px; }
-    .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #2e7d32; padding-bottom: 15px; margin-bottom: 20px; }
-   
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid #2e7d32;
+      padding-bottom: 15px;
+      margin-bottom: 20px;
+    }
+
     .dashboard-grid {
       display: grid;
       grid-template-columns: 2fr 1fr;
       gap: 20px;
     }
 
-    .card { background: #1e1e1e; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
-    h2 { margin-top: 0; color: #4caf50; font-size: 1.2rem; border-bottom: 1px solid #333; padding-bottom: 10px;}
+    .card {
+      background: #1e1e1e;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    }
+
+    h2 {
+      margin-top: 0;
+      color: #4caf50;
+      font-size: 1.2rem;
+      border-bottom: 1px solid #333;
+      padding-bottom: 10px;
+    }
 
     table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    th, td { padding: 12px; border-bottom: 1px solid #333; text-align: left; font-size: 0.95rem; }
+
+    th, td {
+      padding: 12px;
+      border-bottom: 1px solid #333;
+      text-align: left;
+      font-size: 0.95rem;
+    }
+
     th { color: #888; font-weight: 600; }
+
     tr:hover { background-color: #252525; }
 
-    .risk-bar-bg { background: #333; height: 6px; border-radius: 3px; width: 100%; margin-top: 5px; }
-    .risk-bar-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, #4caf50, #f44336); }
+    .risk-bar-bg {
+      background: #333;
+      height: 6px;
+      border-radius: 3px;
+      width: 100%;
+      margin-top: 5px;
+    }
 
-    select, input[type="date"] { 
-            background: #333; 
-            color: white; 
-            padding: 8px 12px; 
-            border: 1px solid #4caf50; 
-            border-radius: 4px; 
-            font-size: 1rem; 
-        }
-   
-    .badge { padding: 3px 8px; border-radius: 4px; font-size: 0.85rem; font-weight: bold; }
+    .risk-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      background: linear-gradient(90deg, #4caf50, #f44336);
+    }
+
+    select, input[type="date"] {
+      background: #333;
+      color: white;
+      padding: 8px 12px;
+      border: 1px solid #4caf50;
+      border-radius: 4px;
+      font-size: 1rem;
+    }
+
+    .badge {
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      font-weight: bold;
+    }
+
     .bg-red { background: #c62828; color: white; }
     .bg-orange { background: #ef6c00; color: white; }
     .bg-blue { background: #1565c0; color: white; }
     .bg-purple { background: #6a1b9a; color: white; }
+
+    /* ================== HIỆU ỨNG ================== */
+
+    .fade-slide-in {
+      animation: fadeSlideIn 0.5s ease forwards;
+    }
+
+    .new-item {
+      animation: newItemPop 0.45s ease forwards;
+    }
+
+    @keyframes fadeSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes newItemPop {
+      from {
+        opacity: 0;
+        transform: scale(0.95) translateY(-6px);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+
+    tbody tr {
+      transition: transform 0.25s ease, opacity 0.25s ease;
+    }
   </style>
 </head>
+
 <body>
 
   <div class="header">
     <h1>🛡️ MONITOR CENTER</h1>
-    <div style="display: flex; gap: 10px; align-items: center;">
-            
-            <label>Chế độ:</label>
-            <select id="modeSelect" onchange="loadData()">
-                <option value="epd_full">Quét Cảm xúc và Tư thế</option>
-                <option value="epd_distraction">Chống mất tập trung</option>
-            </select>
-                  <label>Lớp:</label>
-          <select id="classSelect" onchange="loadData()">
-            <option value="Lớp 12A1">Lớp 12A1</option>
-            <option value="Lớp 12A2">Lớp 12A2</option>
-            <option value="Lớp 12A3">Lớp 12A3</option>
-            <option value="Lớp 12A4">Lớp 12A4</option>
-            <option value="Lớp 12A5">Lớp 12A5</option>
-          </select>
-         
-                <label>Ngày:</label>
-                <input type="date" id="dateSelect" onchange="loadData()">
+    <div style="display:flex; gap:10px; align-items:center;">
 
-          <a href="/logout" style="background: #c62828; color: white; padding: 8px 15px; text-decoration: none; border-radius: 4px; font-size: 0.9rem; margin-left: 20px;">
-            Đăng Xuất
-          </a>
+      <label>Chế độ:</label>
+      <select id="modeSelect" onchange="triggerHardReload()">
+        <option value="epd_full">Quét Cảm xúc và Tư thế</option>
+        <option value="epd_distraction">Chống mất tập trung</option>
+      </select>
+
+      <label>Lớp:</label>
+      <select id="classSelect" onchange="triggerHardReload()">
+        <option value="Lớp 12A1">Lớp 12A1</option>
+        <option value="Lớp 12A2">Lớp 12A2</option>
+        <option value="Lớp 12A3">Lớp 12A3</option>
+        <option value="Lớp 12A4">Lớp 12A4</option>
+        <option value="Lớp 12A5">Lớp 12A5</option>
+      </select>
+
+      <label>Ngày:</label>
+      <input type="date" id="dateSelect" onchange="triggerHardReload()">
+
+      <a href="/logout"
+         style="background:#c62828;color:white;padding:8px 15px;text-decoration:none;
+                border-radius:4px;font-size:0.9rem;margin-left:20px;">
+        Đăng Xuất
+      </a>
     </div>
   </div>
 
   <div class="dashboard-grid">
-   
+
     <div class="card">
       <h2>📜 Nhật Ký Vi Phạm Chi Tiết</h2>
       <table>
@@ -80,7 +166,9 @@
           <tr>
             <th width="15%">Học Sinh</th>
             <th width="25%">Vấn đề</th>
-            <th width="20%">Ngày</th> <th width="25%">Khung Giờ</th> <th width="15%">Thời lượng</th>
+            <th width="20%">Ngày</th>
+            <th width="25%">Khung Giờ</th>
+            <th width="15%">Thời lượng</th>
           </tr>
         </thead>
         <tbody id="log-table"></tbody>
@@ -89,97 +177,96 @@
 
     <div class="card">
       <h2>⚠️ Bảng Xếp Hạng Nguy Cơ</h2>
-      <small style="color: #777">Dựa trên tổng thời gian tích lũy</small>
-      <table style="margin-top: 15px;">
+      <small style="color:#777">Dựa trên tổng thời gian tích lũy</small>
+      <table style="margin-top:15px;">
         <thead>
           <tr><th>Hạng</th><th>Học Sinh</th><th>Điểm Rủi Ro</th></tr>
         </thead>
         <tbody id="risk-table"></tbody>
       </table>
     </div>
+
   </div>
 
-  <script>
-        // Hàm lấy ngày hôm nay dưới định dạng YYYY-MM-DD
-        function getTodayDate() {
-            const today = new Date();
-            const year = today.getFullYear();
-            const month = String(today.getMonth() + 1).padStart(2, '0');
-            const day = String(today.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
-        }
-        
-        // Thiết lập ngày mặc định là ngày hôm nay khi trang tải
-        document.getElementById('dateSelect').value = getTodayDate();
-        
+<script>
+  let lastLogIds = [];
+  let isHardReload = false;
 
-    function getBadge(issue) {
-      if(issue.includes("Ngủ")) return `<span class="badge bg-red">${issue}</span>`;
-      if(issue.includes("Mệt") || issue.includes("Mất")) return `<span class="badge bg-orange">${issue}</span>`;
-      if(issue.includes("Buồn")) return `<span class="badge bg-blue">${issue}</span>`;
-      return `<span class="badge bg-purple">${issue}</span>`;
-    }
+  function triggerHardReload() {
+    isHardReload = true;
+    loadData();
+  }
 
-    async function loadData() {
-            // BƯỚC 1: LẤY THAM SỐ TỪ CÁC CONTROL
-            const currentMode = document.getElementById("modeSelect").value; // Lấy chế độ quét
-      const currentClass = document.getElementById("classSelect").value;
-            const selectedDate = document.getElementById("dateSelect").value;
-            const dateToFetch = selectedDate || getTodayDate();
-     
-      // 1. Lấy logs - URL API được cập nhật với tham số mode
-      // URL mẫu: /api/get_logs/epd_full/Lớp 12A1/2023-10-26
-      const logRes = await fetch(`/api/get_logs/${currentMode}/${currentClass}/${dateToFetch}`);
-      const logs = await logRes.json();
-      const logTable = document.getElementById("log-table");
-     
-      logTable.innerHTML = logs.map(l => {
-                const displayDate = l.date ? l.date.split('T')[0] : dateToFetch;
-                return `
-        <tr>
-          <td style="color:#4caf50; font-weight:bold">HS-${l.zone_id}</td>
+  function getTodayDate() {
+    const t = new Date();
+    return `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`;
+  }
+
+  document.getElementById("dateSelect").value = getTodayDate();
+
+  function getBadge(issue) {
+    if(issue.includes("Ngủ")) return `<span class="badge bg-red">${issue}</span>`;
+    if(issue.includes("Mệt") || issue.includes("Mất")) return `<span class="badge bg-orange">${issue}</span>`;
+    if(issue.includes("Buồn")) return `<span class="badge bg-blue">${issue}</span>`;
+    return `<span class="badge bg-purple">${issue}</span>`;
+  }
+
+  async function loadData() {
+    const mode = document.getElementById("modeSelect").value;
+    const cls = document.getElementById("classSelect").value;
+    const date = document.getElementById("dateSelect").value || getTodayDate();
+
+    const logRes = await fetch(`/api/get_logs/${mode}/${cls}/${date}`);
+    const logs = await logRes.json();
+
+    const logTable = document.getElementById("log-table");
+    const newIds = logs.map(l => `${l.zone_id}-${l.start_time}-${l.issue_type}`);
+
+    logTable.innerHTML = logs.map((l, i) => {
+      const id = `${l.zone_id}-${l.start_time}-${l.issue_type}`;
+      const clsAnim = isHardReload ? "fade-slide-in" :
+                      (!lastLogIds.includes(id) ? "new-item" : "");
+      return `
+        <tr class="${clsAnim}" style="animation-delay:${i*0.05}s">
+          <td style="color:#4caf50;font-weight:bold">HS-${l.zone_id}</td>
           <td>${getBadge(l.issue_type)}</td>
-          <td style="color: #aaa">${displayDate}</td> 
-                    <td>${l.start_time} - ${l.end_time}</td> 
-                    <td>${l.duration_seconds}s</td>
-        </tr>
-      `
-            }).join('');
+          <td style="color:#aaa">${l.date ? l.date.split('T')[0] : date}</td>
+          <td>${l.start_time} - ${l.end_time}</td>
+          <td>${l.duration_seconds}s</td>
+        </tr>`;
+    }).join("");
 
-      // 2. Lấy ranking - URL API được cập nhật với tham số mode
-      // URL mẫu: /api/get_risk_ranking/epd_full/Lớp 12A1/2023-10-26
-      const riskRes = await fetch(`/api/get_risk_ranking/${currentMode}/${currentClass}/${dateToFetch}`);
-      const ranking = await riskRes.json();
-      const riskTable = document.getElementById("risk-table");
-     
-      const maxScore = ranking.length > 0 ? ranking[0].score : 1;
+    lastLogIds = newIds;
+    isHardReload = false;
 
-      riskTable.innerHTML = ranking.map((r, index) => {
-        const percent = (r.score / maxScore) * 100;
-        let color = "#4caf50";
-        if(index === 0) color = "#d32f2f";
-        else if(index < 3) color = "#f57c00";
+    const riskRes = await fetch(`/api/get_risk_ranking/${mode}/${cls}/${date}`);
+    const ranking = await riskRes.json();
+    const riskTable = document.getElementById("risk-table");
+    const maxScore = ranking.length ? ranking[0].score : 1;
 
-        return `
-        <tr>
-          <td>#${index + 1}</td>
-          <td style="font-weight:bold; color:${color}">HS-${r.id}</td>
+    riskTable.innerHTML = ranking.map((r,i)=>{
+      const percent = (r.score / maxScore) * 100;
+      let color = "#4caf50";
+      if(i===0) color="#d32f2f";
+      else if(i<3) color="#f57c00";
+
+      return `
+        <tr class="fade-slide-in" style="animation-delay:${i*0.07}s">
+          <td>#${i+1}</td>
+          <td style="font-weight:bold;color:${color}">HS-${r.id}</td>
           <td>
-            <div style="display:flex; justify-content:space-between; font-size:0.8rem">
-              <span>${r.score} điểm</span>
-            </div>
+            <span>${r.score} điểm</span>
             <div class="risk-bar-bg">
-              <div class="risk-bar-fill" style="width: ${percent}%; background: ${color}"></div>
+              <div class="risk-bar-fill" style="width:${percent}%;background:${color}"></div>
             </div>
           </td>
-        </tr>
-        `;
-      }).join('');
-    }
+        </tr>`;
+    }).join("");
+  }
 
-    setInterval(loadData, 2000);
-    loadData();
-  </script>
- 
+  setInterval(loadData, 2000);
+  loadData();
+</script>
+
 </body>
 </html>
