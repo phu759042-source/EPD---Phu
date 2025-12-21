@@ -218,8 +218,8 @@
   });
 
   function getBadge(issue) {
-    if(issue.includes("Ngủ")) return `<span class="badge bg-red">${issue}</span>`;
-    if(issue.includes("Mệt") || issue.includes("Mất")) return `<span class="badge bg-orange">${issue}</span>`;
+    if(issue.includes("Ngủ") || issue.includes("Cúi nhiều") || issue.includes("Giận dữ") || issue.includes("Sợ hãi") || issue.includes("Ghê sợ")) return `<span class="badge bg-red">${issue}</span>`;
+    if(issue.includes("Mệt") || issue.includes("Mất") || issue.includes("Hơi cúi")) return `<span class="badge bg-orange">${issue}</span>`;
     if(issue.includes("Buồn")) return `<span class="badge bg-blue">${issue}</span>`;
     return `<span class="badge bg-purple">${issue}</span>`;
   }
