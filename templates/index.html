@@ -204,33 +204,39 @@
   let hardReload = false;
   let previousRanking = {};
 
+  document.getElementById("dateSelect").value =
+    new Date().toISOString().split("T")[0];
+
+  window.addEventListener("load", () => {
+    document.body.classList.add("page-loaded");
+  });
+
+  function getBadge(issue) {
+    if(issue.includes("Ngủ") || issue.includes("Cúi nhiều") || issue.includes("Giận dữ") || issue.includes("Sợ hãi") || issue.includes("Ghê sợ"))
+      return `<span class="badge bg-red">${issue}</span>`;
+    if(issue.includes("Mệt") || issue.includes("Mất") || issue.includes("Hơi cúi"))
+      return `<span class="badge bg-orange">${issue}</span>`;
+    if(issue.includes("Buồn"))
+      return `<span class="badge bg-blue">${issue}</span>`;
+    return `<span class="badge bg-purple">${issue}</span>`;
+  }
+
   async function loadData() {
     const mode = modeSelect.value;
     const cls = classSelect.value;
     const date = dateSelect.value;
 
     const logTable = document.getElementById("log-table");
-
-    /* ===== 1. LƯU VỊ TRÍ CŨ (FIRST) ===== */
-    const oldPositions = {};
-    document.querySelectorAll("#log-table tr").forEach(row => {
-      const key = row.dataset.key;
-      if (key) {
-        oldPositions[key] = row.getBoundingClientRect().top;
-      }
-    });
-
     if(hardReload) logTable.classList.add("fade-table");
 
     const logs = await (await fetch(`/api/get_logs/${mode}/${cls}/${date}`)).json();
     const keys = logs.map(l => `${l.zone_id}-${l.start_time}-${l.issue_type}`);
 
-    /* ===== 2. RENDER LẠI BẢNG ===== */
     logTable.innerHTML = logs.map(l => {
       const key = `${l.zone_id}-${l.start_time}-${l.issue_type}`;
       const isNew = !lastLogKeys.includes(key);
       return `
-        <tr class="${isNew ? 'row-new' : ''}" data-key="${key}">
+        <tr class="${isNew ? 'row-new' : ''}">
           <td style="color:#4caf50;font-weight:bold">HS-${l.zone_id}</td>
           <td>${getBadge(l.issue_type)}</td>
           <td>${date}</td>
@@ -239,29 +245,11 @@
         </tr>`;
     }).join("");
 
-    /* ===== 3. FLIP ANIMATION (INVERT → PLAY) ===== */
-    requestAnimationFrame(() => {
-      document.querySelectorAll("#log-table tr").forEach(row => {
-        const key = row.dataset.key;
-        if (oldPositions[key] !== undefined) {
-          const newTop = row.getBoundingClientRect().top;
-          const delta = oldPositions[key] - newTop;
-
-          if (delta !== 0) {
-            row.style.transform = `translateY(${delta}px)`;
-            requestAnimationFrame(() => {
-              row.style.transform = "translateY(0)";
-            });
-          }
-        }
-      });
-    });
-
     lastLogKeys = keys;
     hardReload = false;
     logTable.classList.remove("fade-table");
 
-    /* ===== RANKING (GIỮ NGUYÊN HOÀN TOÀN) ===== */
+    /* ===== RANKING + HIỆU ỨNG DI CHUYỂN ===== */
     const ranking = await (await fetch(`/api/get_risk_ranking/${mode}/${cls}/${date}`)).json();
     const max = ranking[0]?.score || 1;
     const riskTable = document.getElementById("risk-table");
@@ -306,7 +294,6 @@
   setInterval(loadData, 2000);
   loadData();
 </script>
-
 
 </body>
 </html>
